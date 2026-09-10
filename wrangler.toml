@@ -1,11 +1,16 @@
 name = "cf-forum"
 compatibility_date = "2024-11-01"
 
-# D1 数据库绑定（部署前在 CF 控制台创建）
+# D1 数据库绑定（部署时在 CF 控制台 Pages 项目绑定，database_id 见控制台）
 [[d1_databases]]
 binding = "DB"
 database_name = "cf-forum-db"
 database_id = "YOUR_DATABASE_ID"
+
+# R2 图片存储绑定（部署时在 CF 控制台 Pages 项目绑定 IMG_BUCKET → cf-forum-img）
+[[r2_buckets]]
+binding = "IMG_BUCKET"
+bucket_name = "cf-forum-img"
 
 # JWT 密钥：不要写在此文件里随仓库提交！
 # 部署时在 CF 控制台 Pages 项目 → Settings → Environment variables 配置 JWT_SECRET（Secret），
