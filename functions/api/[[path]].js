@@ -3,6 +3,7 @@ import { register, login, me, logout, changePassword } from '../_lib/handlers/au
 import { list as threadList, detail, create as createThread, update as updateThread, remove as removeThread } from '../_lib/handlers/threads.js';
 import { list as replyList, create as createReply, remove as removeReply } from '../_lib/handlers/replies.js';
 import { myNotify, markRead, clearAll, userList } from '../_lib/handlers/misc.js';
+import { upload, serve as serveImg } from '../_lib/handlers/upload.js';
 
 // /api/* 的 catch-all 路由（[[path]] 为 Pages Functions 可变参数路由）
 export async function onRequest(context) {
@@ -39,6 +40,10 @@ export async function onRequest(context) {
     if (route === 'notify/read' && method === 'POST') return markRead(request, env);
     if (route === 'notify/clear' && method === 'POST') return clearAll(request, env);
     if (route === 'users' && method === 'GET') return userList(request, env);
+
+    // 图片：上传（登录）与读取（公开）
+    if (route === 'upload/image' && method === 'POST') return upload(request, env);
+    if (route.startsWith('img/')) return serveImg(request, env);
 
     return error('接口不存在', 404);
   } catch (e) {
