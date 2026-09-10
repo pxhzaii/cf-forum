@@ -26,7 +26,8 @@ function bbcode(text) {
   const t = esc(text);
   let out = t.replace(/\[url\](https?:\/\/[^\s\[\]]+)\[\/url\]/gi,
     (m, u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
-  out = out.replace(/\[img\](https?:\/\/[^\s\[\]]+\.(?:png|jpe?g|gif|webp))\[\/img\]/gi,
+  // 站内上传图片（/api/img/...）或 https 外链图片
+  out = out.replace(/\[img\]((?:\/api\/img\/|https?:\/\/)[^\s\[\]]+\.(?:png|jpe?g|gif|webp))\[\/img\]/gi,
     (m, u) => `<img src="${u}" alt="图片" loading="lazy" onerror="this.style.display='none'">`);
   return out.replace(/\n/g, '<br>');
 }
@@ -164,6 +165,11 @@ function renderDetail() {
         <input type="hidden" id="reply_to_nick" value="">
         <input class="inp" type="text" value="${esc(state.user.nickname)}" readonly>
         <textarea class="textarea-reply" id="replyTextarea" placeholder="回复，点楼层回复@坛友" required></textarea>
+        <div class="upload-bar">
+          <input type="file" id="replyFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="app.uploadImage(this,'replyTextarea')">
+          <button type="button" class="btn-upload" onclick="document.getElementById('replyFile').click()">📎上传图片（≤5MB）</button>
+          <span id="replyUploadMsg" class="upload-msg"></span>
+        </div>
         <button type="submit">提交回复</button></form>`
     : `<div class="empty">🔒<span class="reply-btn" onclick="app.openLogin()">登录后才可以回复</span></div>`;
 
@@ -287,6 +293,41 @@ const app = {
   },
   async viewReplyPage(p) {
     await this.openThread(state.replyThreadId, p);
+  },
+  // 图片上传：上传后把 [img]相对URL[/img] 插入光标处
+  async uploadImage(input, textareaId) {
+    const file = input.files && input.files[0];
+    const msgEl = document.getElementById(textareaId === 'threadContent' ? 'threadUploadMsg' : 'replyUploadMsg');
+    const btn = input.previousElementSibling; // 按钮在 file input 前面
+    if (!file) return;
+    if (!state.user) { this.openLogin(); return; }
+    // 重置 input，确保同一文件可重复选择
+    input.value = '';
+    // 前端预校验
+    if (!/^image\/(png|jpe?g|gif|webp)$/.test(file.type)) { alert('仅支持 png/jpg/gif/webp 图片'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); return; }
+
+    const ta = document.getElementById(textareaId);
+    const pos = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+    btn.disabled = true;
+    msgEl.textContent = '上传中…';
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const d = await api.uploadImage(fd);
+      const tag = `[img]${d.url}[/img]`;
+      ta.value = ta.value.slice(0, pos) + tag + ta.value.slice(ta.selectionEnd == null ? ta.value.length : ta.selectionEnd);
+      ta.focus();
+      const newPos = pos + tag.length;
+      ta.setSelectionRange(newPos, newPos);
+      msgEl.textContent = '已插入';
+      setTimeout(() => { msgEl.textContent = ''; }, 2500);
+    } catch (e) {
+      msgEl.textContent = '';
+      alert(e.message);
+    } finally {
+      btn.disabled = false;
+    }
   },
   // 登录注册
   openLogin() { showModal('loginModal'); },
