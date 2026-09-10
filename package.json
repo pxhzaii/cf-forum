@@ -1,0 +1,14 @@
+{
+  "name": "cf-forum",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "极简论坛 - Cloudflare Pages + D1 版",
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy ."
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
