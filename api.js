@@ -2,10 +2,11 @@
 const API_BASE = '/api';
 
 async function request(path, options = {}) {
+  const isForm = options.body instanceof FormData;
   const res = await fetch(API_BASE + path, {
     method: options.method || 'GET',
-    headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    headers: options.body ? (isForm ? {} : { 'Content-Type': 'application/json' }) : undefined,
+    body: isForm ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     credentials: 'same-origin',
   });
   let data = null;
@@ -42,4 +43,7 @@ export const api = {
   markNotifyRead: (id) => request(`/notify/read?id=${id}`, { method: 'POST' }),
   clearNotify: () => request('/notify/clear', { method: 'POST' }),
   users: () => request('/users'),
+
+  // 图片上传（multipart/form-data）
+  uploadImage: (formData) => request('/upload/image', { method: 'POST', body: formData }),
 };
