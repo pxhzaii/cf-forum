@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>极简论坛</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#f5f7fa;color:#333;line-height:1.65;font-size:15px;}
+.container{max-width:100%;margin:0 auto;padding:12px;}
+header{background:#2c3e50;color:#fff;padding:16px 12px;text-align:center;border-radius:8px 8px 0 0;}
+header h1{font-size:20px;}
+nav{background:#fff;padding:12px;border-bottom:1px solid #e2e2e2;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+nav a{color:#3498db;text-decoration:none;font-size:15px;}
+.btn-new{background:#3498db;color:#fff;padding:7px 12px;border-radius:4px;text-decoration:none;font-size:14px;border:none;cursor:pointer;font-family:inherit;display:inline-block;}
+.btn-danger{background:#e74c3c;color:#fff;padding:6px 10px;border-radius:4px;text-decoration:none;font-size:13px;border:none;cursor:pointer;}
+.btn-small{font-size:13px;padding:4px 8px;border-radius:3px;text-decoration:none;margin:0 3px;display:inline-block;}
+.badge{background:#f5222d;color:#fff;padding:1px 7px;border-radius:10px;font-size:12px;}
+.notify-bar{background:#fffbe6;border:1px solid #ffe58f;padding:10px 12px;margin-bottom:12px;border-radius:6px;}
+.notify-item{padding:6px 0;border-bottom:1px dashed #eee;font-size:14px;word-break:break-all;}
+.form-box{background:#fff;padding:16px 14px;border-radius:8px;margin-bottom:14px;}
+.form-box h2{font-size:18px;margin-bottom:14px;}
+.form-box input.title-input{width:100%;padding:10px;font-size:16px;border:1px solid #ddd;border-radius:4px;margin-bottom:12px;}
+.textarea-reply{width:100%;min-height:140px;padding:12px;border:1px solid #ddd;border-radius:4px;resize:none;font-size:15px;overflow-y:hidden;line-height:1.65;}
+.textarea-post{width:100%;min-height:400px;padding:12px;border:1px solid #ddd;border-radius:4px;resize:none;font-size:15px;overflow-y:hidden;}
+.form-box .inp{padding:10px;border:1px solid #ddd;border-radius:4px;width:100%;max-width:260px;font-size:15px;margin-bottom:10px;}
+.form-box button{width:100%;background:#3498db;color:#fff;border:none;padding:12px;border-radius:4px;margin-top:12px;cursor:pointer;font-size:16px;}
+.thread-wrap{background:#fff;border-radius:8px;overflow:hidden;}
+.thread-item{padding:14px 12px;border-bottom:1px solid #eee;word-break:break-all;}
+.thread-item:hover{background:#f8f9fa;}
+.thread-list-title{font-size:16px;font-weight:bold;color:#222;margin-bottom:6px;}
+.meta-text{font-size:12px;color:#888;word-break:break-all;}
+.detail-box{background:#fff;padding:14px 12px;border-radius:8px;margin-top:12px;}
+.thread-header{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #eee;}
+.thread-header h1{font-size:19px;margin-bottom:8px;word-break:break-all;}
+.thread-header .nick{font-weight:bold;font-size:16px;color:#222;}
+.thread-header .timeip{font-size:12px;color:#777;margin-top:4px;word-break:break-all;}
+.thread-content{font-size:15px;margin-bottom:20px;line-height:1.7;word-break:break-all;white-space:pre-wrap;}
+.post-block{background:#fafbfc;border-left:4px solid #3498db;padding:12px 10px;margin:12px 0;border-radius:4px;word-break:break-all;}
+.post-block > div{white-space:pre-wrap;}
+.post-meta{font-size:12px;color:#777;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.floor-tag{background:#e8edf3;padding:2px 6px;border-radius:3px;font-size:11px;}
+.reply-quote{background:#eef3f8;padding:6px 8px;border-radius:4px;font-size:14px;color:#444;margin-bottom:8px;word-break:break-all;}
+.reply-btn{font-size:13px;color:#3498db;cursor:pointer;white-space:nowrap;}
+.empty{text-align:center;color:#999;padding:40px 12px;font-size:14px;}
+.pagination{padding:14px 8px;text-align:center;background:#fff;border-radius:8px;margin-top:12px;}
+.pagination a{display:inline-block;padding:6px 10px;margin:2px 3px;border:1px solid #ddd;text-decoration:none;color:#3498db;border-radius:3px;font-size:14px;}
+.pagination a.active{background:#3498db;color:#fff;border-color:#3498db;}
+.pagination input{border:1px solid #ddd;border-radius:3px;}
+img{max-width:100%;height:auto;border-radius:4px;}
+.msg{color:#c0392b;margin-bottom:8px;}
+.modal-mask{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;padding:12px;}
+.modal-wrap{background:#fff;width:100%;max-width:420px;border-radius:10px;padding:18px;position:relative;max-height:90vh;overflow-y:auto;}
+.modal-close{position:absolute;top:10px;right:12px;font-size:22px;color:#888;cursor:pointer;}
+.modal-mask.show{display:flex;}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1>📝极简论坛</h1>
+    <p style="font-size:13px;opacity:0.9;">Cloudflare Pages 版 · 登录后发帖</p>
+</header>
+<nav id="nav"></nav>
+<div id="notifyBox"></div>
+<div id="app"></div>
+<div id="view"></div>
+
+<!-- 发帖/编辑弹窗 -->
+<div id="threadModal" class="modal-mask" onclick="if(event.target===this)closeModal('threadModal')">
+    <div class="modal-wrap" onclick="event.stopPropagation();">
+        <span class="modal-close" onclick="closeModal('threadModal')">×</span>
+        <h2 id="threadModalTitle">发布新帖子</h2>
+        <form onsubmit="return app.submitThread(event)">
+            <input type="hidden" id="threadModalAction" value="new">
+            <input type="hidden" id="threadModalId" value="">
+            <input class="title-input" type="text" id="threadTitle" placeholder="帖子标题（必填）">
+            <textarea class="textarea-post" id="threadContent" placeholder="正文；&#10;图片：[img]https://xxx.png[/img]&#10;链接：[url]https://xxx[/url]" required></textarea>
+            <button type="submit">发布</button>
+        </form>
+    </div>
+</div>
+
+<!-- 登录/注册弹窗 -->
+<div id="loginModal" class="modal-mask" onclick="if(event.target===this)closeModal('loginModal')">
+    <div class="modal-wrap" onclick="event.stopPropagation();">
+        <span class="modal-close" onclick="closeModal('loginModal')">×</span>
+        <form method="post" style="margin-bottom:16px;" onsubmit="return app.doLogin(event)">
+            <h4>登录账号</h4>
+            <input class="inp" type="text" id="loginUsername" placeholder="用户名" required>
+            <input class="inp" type="password" id="loginPassword" placeholder="密码" required>
+            <button type="submit" name="do_login">登录</button>
+        </form>
+        <form method="post" onsubmit="return app.doRegister(event)">
+            <h4>注册新账号</h4>
+            <input class="inp" type="text" id="regUsername" placeholder="登录用户名" required>
+            <input class="inp" type="text" id="regNick" placeholder="显示昵称" required>
+            <input class="inp" type="password" id="regPassword" placeholder="密码(至少4位)" required>
+            <button type="submit" name="do_register">注册</button>
+        </form>
+    </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div id="pwdModal" class="modal-mask" onclick="if(event.target===this)closeModal('pwdModal')">
+    <div class="modal-wrap" onclick="event.stopPropagation();">
+        <span class="modal-close" onclick="closeModal('pwdModal')">×</span>
+        <h4>修改密码</h4>
+        <form onsubmit="return app.doChangePwd(event)">
+            <input class="inp" type="number" id="pwdTarget" placeholder="填写目标用户UID" required>
+            <div style="font-size:12px;color:#777;margin:-8px 0 10px 2px;">普通用户：UID 已自动填自己的，只能改自己；管理员：输入他人 UID 可免原密码修改</div>
+            <input class="inp" type="password" id="pwdOld" placeholder="原密码（管理员改他人无需填写）">
+            <input class="inp" type="password" id="pwdNew" placeholder="新密码(≥4位)" required>
+            <button type="submit">确认修改密码</button>
+        </form>
+    </div>
+</div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
