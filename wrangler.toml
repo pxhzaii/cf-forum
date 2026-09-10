@@ -1,0 +1,13 @@
+name = "cf-forum"
+compatibility_date = "2024-11-01"
+
+# D1 数据库绑定（部署前在 CF 控制台创建）
+[[d1_databases]]
+binding = "DB"
+database_name = "cf-forum-db"
+database_id = "YOUR_DATABASE_ID"
+
+# JWT 密钥：不要写在此文件里随仓库提交！
+# 部署时在 CF 控制台 Pages 项目 → Settings → Environment variables 配置 JWT_SECRET（Secret），
+# 或本地用 `npx wrangler pages secret put JWT_SECRET --project-name=cf-forum`。
+# 若本文件声明 [vars] JWT_SECRET，会覆盖控制台 Secret 且可能被误提交到仓库。
