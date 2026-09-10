@@ -3,22 +3,22 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '238177b2-c7c6-42a0-8023-9fd2629b7990'
-  PropagateID: '238177b2-c7c6-42a0-8023-9fd2629b7990'
-  ReservedCode1: '870159cb-c795-450d-9617-f99421623c3f'
-  ReservedCode2: '870159cb-c795-450d-9617-f99421623c3f'
+  ProduceID: '45fac268-78e2-4460-939d-8896cc55a2d7'
+  PropagateID: '45fac268-78e2-4460-939d-8896cc55a2d7'
+  ReservedCode1: '71e88336-b461-4c1d-bdb6-8d389d875487'
+  ReservedCode2: '71e88336-b461-4c1d-bdb6-8d389d875487'
 ---
 
 # 极简论坛（Cloudflare Pages 版）
 
-原 PHP 单文件论坛的完整迁移版：静态前端 + Pages Functions + Cloudflare D1 数据库。功能与原版 1:1（注册/登录、发帖、楼层回复、引用回复、通知、删帖、编辑、双层分页、阅读计数、BBCode、管理员用户列表/改密/清空通知），并修复了原版全部高危漏洞。
+原 PHP 单文件论坛的完整迁移版：静态前端 + Pages Functions + Cloudflare D1 数据库 + R2 图片存储。功能与原版 1:1（注册/登录、发帖、楼层回复、引用回复、通知、删帖、编辑、双层分页、阅读计数、BBCode、管理员用户列表/改密/清空通知），并修复了原版全部高危漏洞；另新增**图片上传**（存 R2，发帖/回复可直接插图）。
 
 ## 架构
 
 ```
 前端：index.html + app.js + api.js（纯静态）
 后端：functions/ 目录下的 Pages Functions（REST API）
-存储：Cloudflare D1（SQLite）
+存储：Cloudflare D1（SQLite）+ R2（图片）
 ```
 
 | 原版文件 | 现在的存储 |
@@ -44,7 +44,7 @@ AIGC:
 | users.json 损坏全灭 | D1 事务性存储 |
 | [img] 无协议白名单 | 只允许 http/https + 图片后缀 |
 
-## 部署（5 步）
+## 部署（7 步）
 
 > 前置：一个 GitHub 账号 + 一个 Cloudflare 账号。全程约 10 分钟。
 
@@ -119,7 +119,15 @@ CREATE INDEX IF NOT EXISTS idx_notify_to ON notify(to_uid, is_read);
 CREATE INDEX IF NOT EXISTS idx_login_ip ON login_log(ip, ts);
 ```
 
-### 4. 创建 Pages 项目
+> 注意：`idx_replies_thread_floor` 必须是**唯一索引**才能防止并发回帖拿到相同楼层号（上面 SQL 已含）。
+
+### 4. 创建 R2 存储桶（图片用）
+
+Cloudflare 控制台 → Storage & Databases → R2 Object Storage → Create bucket：
+
+- 名称：`cf-forum-img`（可自定，记下来）
+
+### 5. 创建 Pages 项目
 
 Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git：
 
@@ -131,24 +139,28 @@ Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git
   - `JWT_SECRET` = 一串长随机字符串（生成命令：PowerShell 执行 `[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Max 256}) -as [byte[]])`，或 Linux `openssl rand -base64 32`）
 - Save and Deploy
 
-### 5. 绑定 D1
+### 6. 绑定 D1 与 R2
 
-部署完成后：项目 → Settings → Bindings → Add binding：
+部署完成后：项目 → Settings → Bindings → Add binding（两个都要加）：
 
 - **Type**: D1 database
-- **Variable name**: `DB`
-- **D1 database**: 选择第 2 步建的 `cf-forum-db`
+  - **Variable name**: `DB`
+  - **D1 database**: 选择第 2 步建的 `cf-forum-db`
+- **Type**: R2 bucket
+  - **Variable name**: `IMG_BUCKET`
+  - **R2 bucket**: 选择第 4 步建的 `cf-forum-img`
 
 **注意：** 绑定后需要**重新部署一次**才生效（项目 → Deployments → 最新记录右侧 ··· → Retry deployment）。
 
-### 6. 验证
+### 7. 验证
 
 浏览器打开 `https://你的项目名.pages.dev`：
 
 1. 点击「未登录，请注册/登录」注册第一个账号（自动成为管理员）
 2. 登录后发一帖、回复一帖，回列表确认数据显示正常
-3. 点自己帖子右上「编辑」「删帖」按钮验证权限
-4. 访问 `https://你的项目名.pages.dev/api/threads?page=1` 应返回 JSON
+3. 发帖/回复时点「📎上传图片」选一张图，发布后确认图片正常显示
+4. 点自己帖子右上「编辑」「删帖」按钮验证权限
+5. 访问 `https://你的项目名.pages.dev/api/threads?page=1` 应返回 JSON
 
 ## 日常维护
 
@@ -156,6 +168,14 @@ Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git
 - **改 JWT_SECRET**：所有用户登录态失效，需重新登录
 - **备份**：D1 控制台 → Export 下载 SQL 备份
 - **注册开关**：当前开放注册，如需关闭可自行在 auth.js 注册入口加校验
+- **图片管理**：R2 控制台可查看/删除已上传图片；删帖不会自动删 R2 里的图（可定期清理无引用图片）
+
+## 图片上传说明
+
+- 发帖/回复编辑区有「📎上传图片」按钮，选图后自动插入 `[img]...[/img]` 到光标处
+- 支持格式：png / jpg / gif / webp，单张 ≤ 5MB
+- 图片存 R2，通过 `/api/img/img/<uid>/<文件名>` 访问，带 ETag 304 缓存与一年期 immutable 缓存头
+- 上传需登录；外链图片（https + 图片后缀）仍可手动写 [img] 标签引用
 
 ## API 一览
 
@@ -178,5 +198,7 @@ Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git
 | POST | /api/notify/read?id=xxx | 标记已读 |
 | POST | /api/notify/clear | 清空通知（管理员） |
 | GET | /api/users | 用户列表（管理员） |
+| POST | /api/upload/image | 上传图片（multipart，字段 file，需登录） |
+| GET | /api/img/img/<uid>/<file> | 读取图片（公开） |
 
 > AI生成
