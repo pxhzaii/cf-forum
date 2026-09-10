@@ -298,7 +298,7 @@ const app = {
   async uploadImage(input, textareaId) {
     const file = input.files && input.files[0];
     const msgEl = document.getElementById(textareaId === 'threadContent' ? 'threadUploadMsg' : 'replyUploadMsg');
-    const btn = input.previousElementSibling; // 按钮在 file input 前面
+    const btn = input.nextElementSibling; // 上传按钮紧跟在 file input 后面
     if (!file) return;
     if (!state.user) { this.openLogin(); return; }
     // 重置 input，确保同一文件可重复选择
