@@ -19,15 +19,12 @@ export function error(msg, status = 400) {
   return json({ error: msg }, status);
 }
 
-export async function hmac(secret, msg) {
+// 签名
+async function jwtSign(secret, msg) {
   const keyBuf = await crypto.subtle.importKey(
     'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
-  return crypto.subtle.sign('HMAC', keyBuf, enc.encode(msg));
-}
-
-async function jwtSign(secret, msg) {
-  const sig = await hmac(secret, msg);
+  const sig = await crypto.subtle.sign('HMAC', keyBuf, enc.encode(msg));
   return b64url(sig);
 }
 
@@ -78,12 +75,6 @@ export async function getLoginUser(request, env, cache = new Map()) {
   ).bind(payload.uid).first();
   cache.set(token, user || null);
   return user || null;
-}
-
-export async function requireUser(request, env, cache) {
-  const user = await getLoginUser(request, env, cache);
-  if (!user) return { error: error('未登录', 401) };
-  return { user };
 }
 
 export function getIp(request) {
