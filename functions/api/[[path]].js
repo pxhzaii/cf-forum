@@ -1,7 +1,7 @@
 import { error } from '../_lib/util.js';
 import { register, login, me, logout, changePassword } from '../_lib/handlers/auth.js';
 import { list as threadList, detail, create as createThread, update as updateThread, remove as removeThread } from '../_lib/handlers/threads.js';
-import { list as replyList, create as createReply, remove as removeReply } from '../_lib/handlers/replies.js';
+import { create as createReply, remove as removeReply } from '../_lib/handlers/replies.js';
 import { myNotify, markRead, clearAll, userList } from '../_lib/handlers/misc.js';
 import { upload, serve as serveImg } from '../_lib/handlers/upload.js';
 
@@ -31,7 +31,6 @@ export async function onRequest(context) {
     if (route === 'threads' && method === 'DELETE') return removeThread(request, env);
 
     // 回复
-    if (route === 'replies' && method === 'GET') return replyList(request, env);
     if (route === 'replies' && method === 'POST') return createReply(request, env);
     if (route === 'replies' && method === 'DELETE') return removeReply(request, env);
 
