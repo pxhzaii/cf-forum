@@ -1,28 +1,5 @@
 import { json, error, getLoginUser, getIp, getUidByNick } from '../util.js';
 
-// 回复列表（独立分页查询）
-export async function list(request, env) {
-  const url = new URL(request.url);
-  const threadId = parseInt(url.searchParams.get('thread_id') || '0', 10);
-  if (!threadId) return error('参数错误');
-  const rpage = Math.max(1, parseInt(url.searchParams.get('rpage') || '1', 10));
-  const replyPerPage = 10;
-  const offset = (rpage - 1) * replyPerPage;
-
-  const totalRow = await env.DB.prepare(
-    'SELECT COUNT(*) AS c FROM replies WHERE thread_id = ?'
-  ).bind(threadId).first();
-  const replyTotal = totalRow.c;
-  const replyTotalPage = Math.max(1, Math.ceil(replyTotal / replyPerPage));
-
-  const { results } = await env.DB.prepare(`
-    SELECT id, floor, author_name, content, reply_to_floor, reply_to_nick, created_at
-    FROM replies WHERE thread_id = ? ORDER BY floor ASC LIMIT ? OFFSET ?
-  `).bind(threadId, replyPerPage, offset).all();
-
-  return json({ replies: results, replyTotalPage, replyTotal, rpage });
-}
-
 // 发表回复（可引用楼层，生成通知）
 export async function create(request, env) {
   const user = await getLoginUser(request, env);
