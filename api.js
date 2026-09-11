@@ -34,7 +34,6 @@ export const api = {
   deleteThread: (id) => request(`/threads?id=${id}`, { method: 'DELETE' }),
 
   // 回复
-  listReplies: (threadId, rpage) => request(`/replies?thread_id=${threadId}&rpage=${rpage || 1}`),
   createReply: (payload) => request('/replies', { method: 'POST', body: payload }),
   deleteReply: (threadId, floor) => request(`/replies?thread_id=${threadId}&floor=${floor}`, { method: 'DELETE' }),
 
