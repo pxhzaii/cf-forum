@@ -32,7 +32,7 @@ export async function detail(request, env) {
   await env.DB.prepare('UPDATE threads SET views = views + 1 WHERE id = ?').bind(id).run();
 
   const thread = await env.DB.prepare(
-    'SELECT id, title, content, author_id, author_name, ip, views, created_at FROM threads WHERE id = ?'
+    'SELECT id, title, content, author_id, author_name, views, created_at FROM threads WHERE id = ?'
   ).bind(id).first();
   if (!thread) return error('帖子不存在', 404);
 
