@@ -1,13 +1,3 @@
----
-AIGC:
-  ContentProducer: '001191110102MAD55U9H0F10002'
-  ContentPropagator: '001191110102MAD55U9H0F10002'
-  Label: '1'
-  ProduceID: '45fac268-78e2-4460-939d-8896cc55a2d7'
-  PropagateID: '45fac268-78e2-4460-939d-8896cc55a2d7'
-  ReservedCode1: '71e88336-b461-4c1d-bdb6-8d389d875487'
-  ReservedCode2: '71e88336-b461-4c1d-bdb6-8d389d875487'
----
 
 # 极简论坛（Cloudflare Pages 版）
 
@@ -201,4 +191,3 @@ Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git
 | POST | /api/upload/image | 上传图片（multipart，字段 file，需登录） |
 | GET | /api/img/img/<uid>/<file> | 读取图片（公开） |
 
-> AI生成
