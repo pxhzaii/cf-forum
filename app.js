@@ -21,7 +21,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[c]));
 
-// BBCode 转安全 HTML：先转义全部文本，再白名单替换 [img]/[url]
+// BBCode 转安全 HTML：先转义全部文本，再白名单替换 [img]/[url]/[file]
 function bbcode(text) {
   const t = esc(text);
   let out = t.replace(/\[url\](https?:\/\/[^\s\[\]]+)\[\/url\]/gi,
@@ -29,6 +29,13 @@ function bbcode(text) {
   // 站内上传图片（/api/img/...）或 https 外链图片
   out = out.replace(/\[img\]((?:\/api\/img\/|https?:\/\/)[^\s\[\]]+\.(?:png|jpe?g|gif|webp))\[\/img\]/gi,
     (m, u) => `<img src="${u}" alt="图片" loading="lazy" onerror="this.style.display='none'">`);
+  // 站内上传文件（/api/img/file/...）：带原文件名的下载链接，?name= 用于响应头 Content-Disposition
+  out = out.replace(/\[file\](\/api\/img\/file\/[^\s\[\]]+?)(?:\|([^\n\[\]]{1,120}))?\[\/file\]/gi,
+    (m, u, name) => {
+      const safeName = String(name || u.split('/').pop()).replace(/["<>\\]/g, '_');
+      const disp = encodeURIComponent(safeName).replace(/'/g, '%27');
+      return `<a href="${u}?name=${disp}" target="_blank" rel="noopener noreferrer" class="file-link">📎 ${esc(safeName)}</a>`;
+    });
   return out.replace(/\n/g, '<br>');
 }
 
@@ -324,7 +331,7 @@ const app = {
       renderDetail();
     } catch (e) { alert(e.message); }
   },
-  // 图片上传：上传后把 [img]相对URL[/img] 插入光标处
+  // 上传（图片或文件）：图片插 [img]，文件插 [file|原名]
   async uploadImage(input, textareaId) {
     const file = input.files && input.files[0];
     const msgEl = document.getElementById(textareaId === 'threadContent' ? 'threadUploadMsg' : 'replyUploadMsg');
@@ -333,9 +340,11 @@ const app = {
     if (!state.user) { this.openLogin(); return; }
     // 重置 input，确保同一文件可重复选择
     input.value = '';
-    // 前端预校验
-    if (!/^image\/(png|jpe?g|gif|webp)$/.test(file.type)) { alert('仅支持 png/jpg/gif/webp 图片'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); return; }
+    // 前端预校验：图片或白名单文件类型
+    const isImage = /^image\/(png|jpe?g|gif|webp)$/.test(file.type);
+    const isFile = /\.(pdf|txt|docx?|xlsx?|pptx?|zip|7z|rar|mp3|wav|mp4)$/i.test(file.name);
+    if (!isImage && !isFile) { alert('仅支持 png/jpg/gif/webp 图片，或 pdf/txt/office 文档、zip/7z/rar 压缩包、mp3/wav/mp4 音视频'); return; }
+    if (file.size > 50 * 1024 * 1024) { alert('文件不能超过 50MB'); return; }
 
     const ta = document.getElementById(textareaId);
     const pos = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
@@ -345,7 +354,10 @@ const app = {
       const fd = new FormData();
       fd.append('file', file);
       const d = await api.uploadImage(fd);
-      const tag = `[img]${d.url}[/img]`;
+      // 图片插 [img]；文件插 [file|原文件名]（下载时显示原名）
+      const tag = d.type === 'image'
+        ? `[img]${d.url}[/img]`
+        : `[file]${d.url}|${file.name}[/file]`;
       ta.value = ta.value.slice(0, pos) + tag + ta.value.slice(ta.selectionEnd == null ? ta.value.length : ta.selectionEnd);
       ta.focus();
       const newPos = pos + tag.length;
