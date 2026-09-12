@@ -86,7 +86,7 @@ function renderList() {
   }
   let html = `<div class="thread-wrap">`;
   state.threads.forEach(t => {
-    html += `<a href="#" onclick="app.openThread(${t.id},1);return false;" class="thread-item" style="display:block;text-decoration:none;color:inherit;">
+    html += `<a href="/?t=${t.id}" onclick="app.openThread(${t.id},1);return false;" class="thread-item" style="display:block;text-decoration:none;color:inherit;">
       <div class="thread-list-title">${esc(t.title)}</div>
       <div class="meta-text">${esc(t.author_name)} · ${fmtTime(t.created_at)} · 回复：${t.reply_count} · 阅读：${t.views}</div>
     </a>`;
@@ -191,9 +191,14 @@ window.closeModal = closeModal;
 const app = {
   goHome() {
     state.currentThread = null;
+    history.pushState({ view: 'home' }, '', '/');
     this.loadList(1);
   },
-  goPage(p) { this.loadList(p); },
+  goPage(p) {
+    state.page = p;
+    history.pushState({ view: 'home', page: p }, '', p > 1 ? `/?page=${p}` : '/');
+    this.loadList(p);
+  },
   async loadList(page) {
     state.page = page;
     try {
@@ -204,6 +209,7 @@ const app = {
     } catch (e) { alert(e.message); }
   },
   async openThread(id, rpage) {
+    rpage = rpage || 1;
     try {
       const d = await api.threadDetail(id, rpage);
       state.currentThread = d.thread;
@@ -211,6 +217,7 @@ const app = {
       state.replyPage = d.rpage;
       state.replyTotalPage = d.replyTotalPage;
       state.replyThreadId = id;
+      history.pushState({ view: 'thread', id, rpage }, '', `/?t=${id}${rpage > 1 ? '&rpage=' + rpage : ''}`);
       renderDetail();
     } catch (e) { alert(e.message); }
   },
@@ -293,6 +300,29 @@ const app = {
   },
   async viewReplyPage(p) {
     await this.openThread(state.replyThreadId, p);
+  },
+  // 浏览器前进/后退
+  onPopState(e) {
+    const st = e.state;
+    if (st && st.view === 'thread' && st.id) {
+      this._loadThread(st.id, st.rpage || 1);
+    } else {
+      // 后退到首页：只渲染，不再 pushState
+      state.currentThread = null;
+      this.loadList(st && st.page ? st.page : 1);
+    }
+  },
+  // 内部加载帖子（不 pushState，仅渲染）
+  async _loadThread(id, rpage) {
+    try {
+      const d = await api.threadDetail(id, rpage);
+      state.currentThread = d.thread;
+      state.replies = d.replies;
+      state.replyPage = d.rpage;
+      state.replyTotalPage = d.replyTotalPage;
+      state.replyThreadId = id;
+      renderDetail();
+    } catch (e) { alert(e.message); }
   },
   // 图片上传：上传后把 [img]相对URL[/img] 插入光标处
   async uploadImage(input, textareaId) {
@@ -427,7 +457,19 @@ const app = {
 
 // ---------- 启动 ----------
 window.app = app;
+window.addEventListener('popstate', (e) => app.onPopState(e));
 (async function init() {
   await app.loadAuth();
-  await app.goHome();
+  // 从 URL 恢复状态（刷新后保持当前页）
+  const params = new URLSearchParams(location.search);
+  const tid = parseInt(params.get('t') || '0', 10);
+  const rpage = parseInt(params.get('rpage') || '1', 10);
+  if (tid) {
+    // replaceState 使当前 URL 可被后退
+    history.replaceState({ view: 'thread', id: tid, rpage }, '', location.href);
+    await app._loadThread(tid, rpage);
+  } else {
+    history.replaceState({ view: 'home' }, '', location.pathname);
+    await app.goHome();
+  }
 })();
