@@ -48,6 +48,8 @@ nav a{color:#3498db;text-decoration:none;font-size:15px;}
 .pagination a.active{background:#3498db;color:#fff;border-color:#3498db;}
 .pagination input{border:1px solid #ddd;border-radius:3px;}
 img{max-width:100%;height:auto;border-radius:4px;}
+.file-link{display:inline-block;background:#eef3f8;border:1px solid #cfe0f0;color:#3498db;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:14px;margin:2px 4px 2px 0;word-break:break-all;}
+.file-link:hover{background:#e0edf8;}
 .msg{color:#c0392b;margin-bottom:8px;}
 .modal-mask{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;padding:12px;}
 .modal-wrap{background:#fff;width:100%;max-width:420px;border-radius:10px;padding:18px;position:relative;max-height:90vh;overflow-y:auto;}
@@ -79,12 +81,12 @@ img{max-width:100%;height:auto;border-radius:4px;}
             <input type="hidden" id="threadModalAction" value="new">
             <input type="hidden" id="threadModalId" value="">
             <input class="title-input" type="text" id="threadTitle" placeholder="帖子标题（必填）">
-            <textarea class="textarea-post" id="threadContent" placeholder="正文；&#10;图片：[img]https://xxx.png[/img]&#10;链接：[url]https://xxx[/url]" required></textarea>
-            <div class="upload-bar">
-                <input type="file" id="threadFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="app.uploadImage(this,'threadContent')">
-                <button type="button" class="btn-upload" onclick="document.getElementById('threadFile').click()">📎上传图片（≤5MB）</button>
-                <span id="threadUploadMsg" class="upload-msg"></span>
-            </div>
+            <textarea class="textarea-post" id="threadContent" placeholder="正文；&#10;图片：[img]https://xxx.png[/img]&#10;文件：[file]/api/img/file/x.pdf|文件名.pdf[/file]&#10;链接：[url]https://xxx[/url]" required></textarea>
+        <div class="upload-bar">
+          <input type="file" id="replyFile" style="display:none" onchange="app.uploadImage(this,'replyTextarea')">
+          <button type="button" class="btn-upload" onclick="document.getElementById('replyFile').click()">📎上传图片/文件（≤50MB）</button>
+          <span id="replyUploadMsg" class="upload-msg"></span>
+        </div>
             <button type="submit">发布</button>
         </form>
     </div>
